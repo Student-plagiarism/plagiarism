@@ -1,24 +1,60 @@
-import logo from './logo.svg';
 import './App.css';
+import { ChakraProvider, Input, Heading, Box, HStack, Wrap, Flex, SimpleGrid, Spacer } from '@chakra-ui/react';
+import 'zingchart/es6'
+import { useState } from 'react';
+import ZingChart from 'zingchart-react';
 
 function App() {
+  // const myData = {  type: 'line',  series: [    { values: [1,2,4,5,6] }  ]};
+
+  const [config] = useState({
+    /* Graphset array */
+    graphset: [
+
+      {
+        type: 'pie',
+        height: '100%',
+        width: '100%',
+        backgroundColor: 'transparent',
+        // position: 'relative',
+        // float: 'left',
+        // left: '20px',
+        plot: {
+          'border-width': '1px',
+          'border-color': '#000000',
+          // 'overflow-y': 'auto',
+        },
+        series: [
+          { values: [15] },
+          { values: [30] },
+          { values: [34] }
+        ]
+      }
+    ]
+  })
+
+  var myTheme = { palette: { line: [['#FBFCFE', '#00BAF2', '#00BAF2', '#00a7d9'], /* light blue */['#FBFCFE', '#E80C60', '#E80C60', '#d00a56'], /* light pink */['#FBFCFE', '#9B26AF', '#9B26AF', '#8b229d'], /* light purple */['#FBFCFE', '#E2D51A', '#E2D51A', '#E2D51A'], /* med yellow */['#FBFCFE', '#FB301E', '#FB301E', '#e12b1b'], /* med red */['#FBFCFE', '#00AE4D', '#00AE4D', '#00AE4D'], /* med green */] }, graph: { title: { fontFamily: 'Lato', fontSize: 14, padding: 15, fontColor: '#1E5D9E', } } };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <ChakraProvider>
+
+      <Wrap align='center' m='10' justify={'center'}>
+        <Heading >Plagiarism detector for Class Assignments</Heading>
+      </Wrap>
+
+      {/* <div className="App" > */}
+        <Flex w={'6xl'} justify='center' bgSize={'auto'} m='auto' boxShadow={'2xl'} borderRadius='3xl' border='sm' bgColor={'yellow'} bgGradient='linear(to-l, #7928CA, #FF0080)'>
+          <Box h='xl' w='2xs' left={'1'} >
+            < Input p='10' justify='center' position='absolute' placeholder="Browse files" size={'lg'} variant='' colorScheme='green' type="file" />
+            <ZingChart data={config} defaults={myTheme} />
+          </Box>
+          {/* TODO: Display uploaded files here */}
+          <Box h='xl' position='fixed' w='2xs' right='40' bgColor={'white'}></Box>
+        </Flex>
+
+
+      {/* </div> */}
+    </ChakraProvider>
   );
 }
 
