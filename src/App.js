@@ -1,8 +1,19 @@
 import './App.css';
-import { ChakraProvider, Input, Heading, Box, HStack, Wrap, Flex, SimpleGrid, Spacer } from '@chakra-ui/react';
+import {
+  ChakraProvider,
+  Button,
+  Input,
+  Heading,
+  Box,
+  HStack,
+  Wrap,
+  Flex,
+}
+  from '@chakra-ui/react';
 import 'zingchart/es6'
 import { useState } from 'react';
 import ZingChart from 'zingchart-react';
+import uploadWithConversion from './components/uploader';
 
 function App() {
   // const myData = {  type: 'line',  series: [    { values: [1,2,4,5,6] }  ]};
@@ -43,14 +54,17 @@ function App() {
       </Wrap>
 
       {/* <div className="App" > */}
-        <Flex w={'6xl'} justify='center' bgSize={'auto'} m='auto' boxShadow={'2xl'} borderRadius='3xl' border='sm' bgColor={'yellow'} bgGradient='linear(to-l, #7928CA, #FF0080)'>
-          <Box h='xl' w='2xs' left={'1'} >
-            < Input p='10' justify='center' position='absolute' placeholder="Browse files" size={'lg'} variant='' colorScheme='green' type="file" />
-            <ZingChart data={config} defaults={myTheme} />
-          </Box>
-          {/* TODO: Display uploaded files here */}
-          <Box h='xl' position='fixed' w='2xs' right='40' bgColor={'white'}></Box>
-        </Flex>
+      <Flex w={'6xl'} justify='center' bgSize={'auto'} m='auto' boxShadow={'2xl'} borderRadius='3xl' border='sm' bgColor={'yellow'} bgGradient='linear(to-l, #7928CA, #FF0080)'>
+        <Box h='xl' mr='72' w='2xs' >
+          <HStack spacing={'16'} w='md'>
+            <Input pl='0' pr={'10'} pt='10' pb='10' placeholder="Browse files" size={'lg'} variant='' colorScheme='green' type="file" />
+            <Button pr='8' pl='8' onClick={uploadWithConversion} type='submit'>Upload file</Button>
+          </HStack>
+          <ZingChart data={config} defaults={myTheme} />
+        </Box>
+        {/* TODO: Display uploaded files here */}
+        <Box h='xl' position='fixed' w='2xs' right='40' bgColor={'white'}></Box>
+      </Flex>
 
 
       {/* </div> */}
