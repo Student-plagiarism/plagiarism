@@ -13,7 +13,7 @@ import {
 import 'zingchart/es6'
 import { useState } from 'react';
 import ZingChart from 'zingchart-react';
-import uploadWithConversion from './components/uploader';
+import uploadWithConversion from '../components/uploader';
 
 function App() {
   // const myData = {  type: 'line',  series: [    { values: [1,2,4,5,6] }  ]};

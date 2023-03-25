@@ -12,19 +12,20 @@
     "framer-motion": "^10.0.1",
     "fs": "0.0.1-security",
     "google-auth-library": "^8.7.0",
-    "googleapis": "^112.0.0",
+    "googleapis": "^113.0.0",
+    "http2": "^3.3.7",
+    "net": "^1.0.2",
+    "next": "^13.2.4",
+    "plotly.js": "^2.20.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-scripts": "5.0.1",
-    "web-vitals": "^2.1.4",
-    "zingchart": "^2.9.10",
-    "zingchart-react": "^3.1.4"
+    "tls": "^0.0.1",
+    "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
   },
   "eslintConfig": {
     "extends": [
@@ -43,5 +44,11 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "browser": {
+    "fs": false,
+    "path": false,
+    "os": false,
+    "crypto": false
   }
 }
