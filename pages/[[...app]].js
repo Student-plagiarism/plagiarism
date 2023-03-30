@@ -7,8 +7,18 @@ import {
 	HStack,
 	Wrap,
 	Flex,
+	FormControl,
+	FormLabel,
+	FormErrorMessage,
+
 }
 	from '@chakra-ui/react';
+import {
+	Field,
+	Form,
+	Formik,
+}
+	from 'formik';
 import { useState } from 'react';
 import Script from 'next/script';
 // import Plotly from 'plotly.js';
@@ -74,7 +84,7 @@ const App = () => {
 	const [authorizeText, setAuthorizeText] = useState('Authorize');
 	const [token, setToken] = useState('');
 
-	const handleUpload = () => {
+	const handleUpload = async (e) => {
 		// check if serverless function is working
 		// fetch('/api/GAPI', {
 		// 	method: 'GET',
@@ -88,8 +98,11 @@ const App = () => {
 		// 	}
 		// })
 
-		// const file = e.target.files[0];
+		const file = e.target.files[0];
 		// setFiles([...files, file]);
+		console.log(file);
+		// await createFolder();
+		// await uploadWithConversion();
 	}
 
 	const createFolder = async () => {
@@ -121,7 +134,67 @@ const App = () => {
 			})
 	}
 
-	const uploadFiles = async () => {
+	// const uploadFiles = async () => {
+	// 	const fileMetadata = {
+	// 		name: filesNames,
+	// 		parents: [folderId]
+	// 	};
+	// 	const media = {
+	// 		mimeType: 'application/pdf',
+	// 		body: files
+	// 	};
+	// 	await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+	// 		method: 'POST',
+	// 		headers: {
+	// 			'Content-Type': 'application/json',
+	// 			'Authorization': `Bearer ${token}`
+	// 		},
+	// 		body: JSON.stringify(fileMetadata),
+	// 		media: media
+	// 	})
+	// 		.then((response) => {
+	// 			if (response.status === 200) {
+	// 				setFilesUploaded(true);
+	// 				return response.json();
+	// 			}
+	// 		})
+	// 		.then((data) => {
+	// 			setFilesIds(data.id);
+	// 		})
+	// 		.catch((error) => {
+	// 			console.log(error);
+	// 		})
+	// }
+
+	// const convertFiles = async () => {
+	// 	const fileMetadata = {
+	// 		mimeType: 'application/vnd.google-apps.document'
+	// 	};
+	// 	await fetch(`https://www.googleapis.com/drive/v3/files/${filesIds}/copy`, {
+	// 		method: 'POST',
+	// 		headers: {
+	// 			'Content-Type': 'application/json',
+	// 			'Authorization': `Bearer ${token}`
+	// 		},
+	// 		body: JSON.stringify(fileMetadata)
+	// 	})
+	// 		.then((response) => {
+	// 			if (response.status === 200) {
+	// 				setFilesConverted(true);
+	// 				return response.json();
+	// 			}
+	// 		})
+	// 		.then((data) => {
+	// 			setFilesConvertedIds(data.id);
+	// 			setFilesConvertedNames(data.name);
+	// 			setFilesConvertedLinks(data.webViewLink);
+	// 		})
+	// 		.catch((error) => {
+	// 			console.log(error);
+	// 		})
+	// }
+
+	const uploadWithConversion = async () => {
 		const fileMetadata = {
 			name: filesNames,
 			parents: [folderId]
@@ -147,40 +220,36 @@ const App = () => {
 			})
 			.then((data) => {
 				setFilesIds(data.id);
+				const fileMetadata = {
+					mimeType: 'application/vnd.google-apps.document'
+				};
+				fetch(`https://www.googleapis.com/drive/v3/files/${data.id}/copy`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${token}`
+					},
+					body: JSON.stringify(fileMetadata)
+				})
+					.then((response) => {
+						if (response.status === 200) {
+							setFilesConverted(true);
+							return response.json();
+						}
+					})
+					.then((data) => {
+						setFilesConvertedIds(data.id);
+						setFilesConvertedNames(data.name);
+						setFilesConvertedLinks(data.webViewLink);
+					})
+					.catch((error) => {
+						console.log(error);
+					})
 			})
 			.catch((error) => {
 				console.log(error);
 			})
 	}
-
-	const convertFiles = async () => {
-		const fileMetadata = {
-			mimeType: 'application/vnd.google-apps.document'
-		};
-		await fetch(`https://www.googleapis.com/drive/v3/files/${filesIds}/copy`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${token}`
-			},
-			body: JSON.stringify(fileMetadata)
-		})
-			.then((response) => {
-				if (response.status === 200) {
-					setFilesConverted(true);
-					return response.json();
-				}
-			})
-			.then((data) => {
-				setFilesConvertedIds(data.id);
-				setFilesConvertedNames(data.name);
-				setFilesConvertedLinks(data.webViewLink);
-			})
-			.catch((error) => {
-				console.log(error);
-			})
-	}
-
 
 	let tokenClient;
 	let gapiInited = false;
@@ -254,41 +323,41 @@ const App = () => {
 		// 	.then(() => {
 		// 		if (tokenClient === undefined) {
 		// 			gisLoaded().then(() => {
-						try {
-							tokenClient.callback = async (resp) => {
-								if (resp.error !== undefined) {
-									throw (resp);
-								}
-								// document.getElementById('signout_button').style.visibility = 'visible';
-								setSignout(true);
-								// document.getElementById('authorize_button').innerText = 'Refresh';
-								setAuthorizeText('Refresh');
-								await listFiles();
-							}
-						}
-						catch (err) {
-							// document.getElementById('content').innerText = err.message;
-							console.log(err.message)
-							// return;
-						}
-					// })
-				// }
-
-				console.log("tokenClient", tokenClient)
-				try {
-					if (gapi.client.getToken() === null) {
-						// Prompt the user to select a Google Account and ask for consent to share their data
-						// when establishing a new session.
-						console.log(typeof (tokenClient.requestAccessToken))
-						tokenClient.requestAccessToken({ prompt: 'consent' });
-					} else {
-						// Skip display of account chooser and consent dialog for an existing session.
-						tokenClient.requestAccessToken({ prompt: '' });
-					}
-				} catch (error) {
-					console.log(error)
+		try {
+			tokenClient.callback = async (resp) => {
+				if (resp.error !== undefined) {
+					throw (resp);
 				}
-			// })
+				// document.getElementById('signout_button').style.visibility = 'visible';
+				setSignout(true);
+				// document.getElementById('authorize_button').innerText = 'Refresh';
+				setAuthorizeText('Refresh');
+				await listFiles();
+			}
+		}
+		catch (err) {
+			// document.getElementById('content').innerText = err.message;
+			console.log(err.message)
+			// return;
+		}
+		// })
+		// }
+
+		console.log("tokenClient", tokenClient)
+		try {
+			if (gapi.client.getToken() === null) {
+				// Prompt the user to select a Google Account and ask for consent to share their data
+				// when establishing a new session.
+				console.log(typeof (tokenClient.requestAccessToken))
+				tokenClient.requestAccessToken({ prompt: 'consent' });
+			} else {
+				// Skip display of account chooser and consent dialog for an existing session.
+				tokenClient.requestAccessToken({ prompt: '' });
+			}
+		} catch (error) {
+			console.log(error)
+		}
+		// })
 	}
 
 
@@ -325,14 +394,47 @@ const App = () => {
 			<Flex w={'6xl'} justify='center' bgSize={'auto'} m='auto' boxShadow={'2xl'} borderRadius='3xl' border='sm' bgColor={'yellow'} bgGradient='linear(to-l, #7928CA, #FF0080)'>
 				<Box h='xl' mr='72' w='2xs' >
 					<HStack spacing={'16'} w='md'>
-						<Input pl='0' pr={'10'} pt='10' pb='10' placeholder="Choose" size={'lg'} variant='' colorScheme='green' onChange={() => handleUpload} type="file" />
-						<Button pr='8' pl='8' type='submit'>Upload file</Button>
-
+						<Formik
+							initialValues={
+								{
+									File: '',
+									size: 0,
+								}}
+							onSubmit={async (values, actions) => {
+								console.log(
+									{
+										fileName: values.file.name,
+										type: values.file.type,
+										size: `${values.file.size} bytes`
+									}
+								)
+							}}
+						>
+							{(props) => (
+								<Form>
+									<Field name='File' as={Input} placeholder='Choose Files' >
+										{({ field, form }) => (
+											<FormControl isInvalid={form.errors.file && form.touched.file}>
+												<FormLabel>File</FormLabel>
+												<Input {...field} type='file' id='file' placeholder='Choose Files' onChange={(e)=>{
+													handleUpload(e)
+													// do not use setStates with Files causes reloading of google scripts
+												}} />
+												<FormErrorMessage>{form.errors.file}</FormErrorMessage>
+											</FormControl>
+										)}
+									</Field>
+									{/* <Input pl='0' pr={'10'} pt='10' pb='10' placeholder="Choose" size={'lg'} variant='' colorScheme='green' type="file" /> */}
+									<Button pr='8' pl='8' type='submit' isLoading={props.isSubmitting} >Upload file</Button>
+								</Form>
+							)}
+						</Formik>
 					</HStack>
 					{filesUploaded && <Text mt='4' color='green'>Files uploaded successfully</Text>}
 					{driveFiles}
 					{/* {driveFiles && <Text mt='4' color='green'>{driveFiles}</Text>} */}
 					<Button mt='4' onClick={handleAuthClick} disabled={!authorize}>Authorize</Button>
+					{/* <Button mt='4' >Upload</Button> */}
 					<Button mt='4' disabled={!signout}>Signout</Button>
 				</Box>
 			</Flex>
