@@ -10,7 +10,7 @@ import {
 	FormControl,
 	FormLabel,
 	FormErrorMessage,
-
+	Stack,
 }
 	from '@chakra-ui/react';
 import {
@@ -19,51 +19,10 @@ import {
 	Formik,
 }
 	from 'formik';
+import { useToast } from '@chakra-ui/react';
 import { useState } from 'react';
 import Script from 'next/script';
 // import Plotly from 'plotly.js';
-
-// import uploadWithConversion from '../components/uploader';
-
-// const fileMetadata = {
-// 	name: file.name,
-// 	mimeType: 'application/vnd.google-apps.docs',
-// };
-// const media = {
-// 	mimeType: 'application/pdf',
-// };
-//TODO: fetch request with url for uploading with conversion
-// await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable', {
-// 	method: 'POST',
-// 	headers: {
-// 		'X-Upload-Content-Type': 'application/pdf',
-// 		'Content-Type': 'application/json',
-// 	},
-// 	body: JSON.stringify(fileMetadata)
-// })
-// 	.then((response) => {
-// 		if (response.status === 200) {
-// 			setSessionUri(response.headers.get('Location'));
-// 			console.log(response);
-// 		}
-// 	}).then(() => {
-// 		fetch(sessionUri, {
-// 			method: 'PUT',
-// 			headers: {
-// 				'Content-Type': 'application/pdf',
-// 				'Cotent-Length': file.size
-// 			},
-// 			body: file
-// 		})
-// 			.then((response) => {
-// 				if (response.status === 200) {
-// 					console.log(response);
-// 				}
-// 			})
-// 	}).catch((error) => {
-// 		console.log(error);
-// 	})
-// }
 
 const App = () => {
 	const [filesNames, setFilesNames] = useState([]);
@@ -71,19 +30,21 @@ const App = () => {
 	const [folderId, setFolderId] = useState('');
 	const [folderName, setFolderName] = useState('');
 	const [folderCreated, setFolderCreated] = useState(false);
-	const [filesUploaded, setFilesUploaded] = useState(false);
-	const [files, setFiles] = useState([]);
+	const [fileUploaded, setFileUploaded] = useState(false);
+	// const [files, setFiles] = useState([]);
+	const [filesData, setFilesData] = useState([]);
 	const [driveFiles, setDriveFiles] = useState(null);
 	const [filesIds, setFilesIds] = useState([]);
 	const [filesConverted, setFilesConverted] = useState(false);
 	const [filesConvertedIds, setFilesConvertedIds] = useState([]);
 	const [filesConvertedNames, setFilesConvertedNames] = useState([]);
 	const [filesConvertedLinks, setFilesConvertedLinks] = useState([]);
-	const [authorize, setAuthorize] = useState(false);
+	const [authorized, setAuthorized] = useState(false);
 	const [signout, setSignout] = useState(false);
 	const [authorizeText, setAuthorizeText] = useState('Authorize');
 	const [token, setToken] = useState('');
 
+	const toast = useToast();
 	const handleUpload = async (e) => {
 		// check if serverless function is working
 		// fetch('/api/GAPI', {
@@ -99,10 +60,71 @@ const App = () => {
 		// })
 
 		const file = e.target.files[0];
-		// setFiles([...files, file]);
 		console.log(file);
-		// await createFolder();
-		// await uploadWithConversion();
+
+		// check if a folder named as 'Plagiarism Detector' exists
+		// if not, create one and get its id
+		// if yes, get its id
+		if (!folderCreated) {
+			console.log('Folder not created in this session, searching for it on drive...')
+			await searchElseCreateFolder();
+		}
+		console.log(folderId);
+		await uploadFile(file, file.name, file.size);
+	}
+
+	const searchElseCreateFolder = async () => {
+		await fetch(`https://www.googleapis.com/drive/v3/files?q=name='Plagiarism%20Detector'&key=${process.env.NEXT_PUBLIC_API_KEY}`, {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${token}`
+			},
+		})
+			.then((response) => {
+				if (response.status === 200) {
+					console.log(response);
+					return response.json();
+				}
+				else {
+					toast({
+						title: `Error ${response.status}`,
+						description: `${response.statusText}`,
+						status: 'error',
+						duration: 5000,
+						isClosable: true,
+					})
+				}
+			})
+			.then((data) => {
+				if (data.files.length === 0) {
+					console.log('Folder not found, creating one...')
+					createFolder();
+				} else {
+					console.log('Folder found, getting its id...')
+					console.log(data)
+					setFolderId(data.files[0].id);
+					setFolderName(data.files[0].name);
+					setFolderCreated(true);
+					toast({
+						title: 'Folder found',
+						description: 'Folder named as "Plagiarism Detector" already exists, uploaded files will be saved in it. Start uploading files now!',
+						status: 'success',
+						duration: 5000,
+						isClosable: true,
+					})
+				}
+			})
+			.catch(error => {
+				console.log(error);
+				toast({
+					title: 'Error',
+					description: "Couldn't find or create folder",
+					status: 'error',
+					duration: 5000,
+					isClosable: true,
+				})
+			})
 	}
 
 	const createFolder = async () => {
@@ -122,49 +144,118 @@ const App = () => {
 			.then((response) => {
 				if (response.status === 200) {
 					setFolderCreated(true);
+					console.log(response);
 					return response.json();
+				}
+				else {
+					toast({
+						title: `Error ${response.status}`,
+						description: `${response.statusText}`,
+						status: 'error',
+						duration: 5000,
+						isClosable: true,
+					})
 				}
 			})
 			.then((data) => {
 				setFolderId(data.id);
 				setFolderName(data.name);
+				toast({
+					title: 'Folder created',
+					description: 'Folder named as "Plagiarism Detector" created, uploaded files will be saved in it. Start uploading files now!',
+					status: 'success',
+					duration: 5000,
+					isClosable: true,
+				})
+			})
+			.catch((error) => {
+				console.log(error);
+				toast({
+					title: 'Error',
+					description: "Couldn't create folder",
+					status: 'error',
+					duration: 5000,
+					isClosable: true,
+				})
+			})
+	}
+
+	const uploadFile = async (file, fileName, size) => {
+		const fileMetadata = {
+			name: fileName,
+			parents: [folderId],
+			mimeType: 'application/vnd.google-apps.document'
+		};
+
+		const fileData = new FormData();
+		fileData.append('file', file);
+
+		// create a metadata of the file
+		await fetch('https://www.googleapis.com/drive/v3/files', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${token}`
+			},
+			body: JSON.stringify(fileMetadata)
+		})
+			.then((response) => {
+				if (response.status === 200) {
+					console.log(response);
+					return response.json();
+				}
+				else {
+					toast({
+						title: `Error ${response.status}`,
+						description: `Error in folder Metadata creation: ${response.statusText}. Try again please.`,
+						status: 'error',
+						duration: 5000,
+						isClosable: true,
+					})
+				}
+			})
+			.then((data) => {
+				console.log(data);
+				// setFilesIds([...filesIds, data.id]);
+				fetch(`https://www.googleapis.com/upload/drive/v3/files/${data.id}?uploadType=media`, {
+					method: 'PATCH',
+					headers: {
+						'Authorization': `Bearer ${token}`,
+						'Content-Type': 'application/pdf',
+						'Content-Length': size,
+						'Accept': 'application/json',
+					},
+
+					body: fileData
+				})
+					.then((response) => {
+						if (response.status === 200) {
+							console.log(response);
+							setFileUploaded(true);
+							return response.json();
+						}
+						else {
+							toast({
+								title: `Error ${response.status}`,
+								description: `Error in file upload: ${response.statusText}`,
+								status: 'error',
+								duration: 5000,
+								isClosable: true,
+							})
+						}
+					})
+					.then((data) => {
+						console.log(data);
+						setFilesData([...filesData, data]);
+					})
+					.catch((error) => {
+						console.log(error);
+					})
 			})
 			.catch((error) => {
 				console.log(error);
 			})
 	}
-
-	// const uploadFiles = async () => {
-	// 	const fileMetadata = {
-	// 		name: filesNames,
-	// 		parents: [folderId]
-	// 	};
-	// 	const media = {
-	// 		mimeType: 'application/pdf',
-	// 		body: files
-	// 	};
-	// 	await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-	// 		method: 'POST',
-	// 		headers: {
-	// 			'Content-Type': 'application/json',
-	// 			'Authorization': `Bearer ${token}`
-	// 		},
-	// 		body: JSON.stringify(fileMetadata),
-	// 		media: media
-	// 	})
-	// 		.then((response) => {
-	// 			if (response.status === 200) {
-	// 				setFilesUploaded(true);
-	// 				return response.json();
-	// 			}
-	// 		})
-	// 		.then((data) => {
-	// 			setFilesIds(data.id);
-	// 		})
-	// 		.catch((error) => {
-	// 			console.log(error);
-	// 		})
-	// }
 
 	// const convertFiles = async () => {
 	// 	const fileMetadata = {
@@ -194,62 +285,68 @@ const App = () => {
 	// 		})
 	// }
 
-	const uploadWithConversion = async () => {
-		const fileMetadata = {
-			name: filesNames,
-			parents: [folderId]
-		};
-		const media = {
-			mimeType: 'application/pdf',
-			body: files
-		};
-		await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${token}`
-			},
-			body: JSON.stringify(fileMetadata),
-			media: media
-		})
-			.then((response) => {
-				if (response.status === 200) {
-					setFilesUploaded(true);
-					return response.json();
-				}
-			})
-			.then((data) => {
-				setFilesIds(data.id);
-				const fileMetadata = {
-					mimeType: 'application/vnd.google-apps.document'
-				};
-				fetch(`https://www.googleapis.com/drive/v3/files/${data.id}/copy`, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						'Authorization': `Bearer ${token}`
-					},
-					body: JSON.stringify(fileMetadata)
-				})
-					.then((response) => {
-						if (response.status === 200) {
-							setFilesConverted(true);
-							return response.json();
-						}
-					})
-					.then((data) => {
-						setFilesConvertedIds(data.id);
-						setFilesConvertedNames(data.name);
-						setFilesConvertedLinks(data.webViewLink);
-					})
-					.catch((error) => {
-						console.log(error);
-					})
-			})
-			.catch((error) => {
-				console.log(error);
-			})
-	}
+	// const uploadWithConversion = async (file, fileName) => {
+	// 	const fileMetadata = {
+
+	// 		name: fileName,
+	// 		parents: [folderId],
+	// 		mimeType: 'application/vnd.google-apps.document'
+	// 	};
+	// 	const media = {
+	// 		mimeType: 'application/pdf',
+	// 		body: file
+	// 	};
+	// 	await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+	// 		method: 'POST',
+	// 		headers: {
+	// 			'Authorization': `Bearer ${token}`,
+
+	// 			'Content-Type': 'application/json; charset=UTF-8',
+	// 			'Accept': 'application/json'
+	// 		},
+	// 		body: JSON.stringify(fileMetadata),
+	// 		media: media
+	// 	})
+	// 		.then((response) => {
+	// 			if (response.status === 200) {
+	// 				setFilesUploaded(true);
+	// 				console.log(response);
+	// 				return response.json();
+	// 			}
+	// 		})
+	// 		.then((data) => { console.log(data) })
+	// 		// .then((data) => {
+	// 		// 	setFilesIds(data.id);
+	// 		// 	const fileMetadata = {
+	// 		// 		mimeType: 'application/vnd.google-apps.document'
+	// 		// 	};
+	// 		// 	fetch(`https://www.googleapis.com/drive/v3/files/${data.id}/copy`, {
+	// 		// 		method: 'POST',
+	// 		// 		headers: {
+	// 		// 			'Content-Type': 'application/json',
+	// 		// 			'Authorization': `Bearer ${token}`
+	// 		// 		},
+	// 		// 		body: JSON.stringify(fileMetadata)
+	// 		// 	})
+	// 		// 		.then((response) => {
+	// 		// 			if (response.status === 200) {
+	// 		// 				setFilesConverted(true);
+	// 		// 				return response.json();
+	// 		// 			}
+	// 		// 		})
+	// 		// 		.then((data) => {
+	// 		// 			setFilesConvertedIds(data.id);
+	// 		// 			setFilesConvertedNames(data.name);
+	// 		// 			setFilesConvertedLinks(data.webViewLink);
+	// 		// 		})
+	// 		// 		.catch((error) => {
+	// 		// 			console.log(error);
+	// 		// 		})
+	// 		// })
+	// 		.catch((error) => {
+	// 			console.log(error);
+	// 		})
+	// }
 
 	let tokenClient;
 	let gapiInited = false;
@@ -313,7 +410,7 @@ const App = () => {
 	async function maybeEnableButtons() {
 		if (gapiInited && gisInited) {
 			// document.getElementById('authorize_button').style.visibility = 'visible';
-			setAuthorize(true);
+			setAuthorized(true);
 		}
 	}
 
@@ -332,6 +429,8 @@ const App = () => {
 				setSignout(true);
 				// document.getElementById('authorize_button').innerText = 'Refresh';
 				setAuthorizeText('Refresh');
+				setAuthorized(true);
+				setToken(gapi.client.getToken().access_token);
 				await listFiles();
 			}
 		}
@@ -348,7 +447,6 @@ const App = () => {
 			if (gapi.client.getToken() === null) {
 				// Prompt the user to select a Google Account and ask for consent to share their data
 				// when establishing a new session.
-				console.log(typeof (tokenClient.requestAccessToken))
 				tokenClient.requestAccessToken({ prompt: 'consent' });
 			} else {
 				// Skip display of account chooser and consent dialog for an existing session.
@@ -358,6 +456,21 @@ const App = () => {
 			console.log(error)
 		}
 		// })
+	}
+
+	//    *  Sign out the user upon button click.
+	function handleSignoutClick() {
+		const token = gapi.client.getToken();
+		if (token !== null) {
+			google.accounts.oauth2.revoke(token.access_token);
+			gapi.client.setToken('');
+			//   document.getElementById('content').innerText = '';
+			setDriveFiles('');
+			//   document.getElementById('authorize_button').innerText = 'Authorize';
+			setAuthorizeText('Authorize');
+			//   document.getElementById('signout_button').style.visibility = 'hidden';
+			setSignout(false);
+		}
 	}
 
 
@@ -386,6 +499,31 @@ const App = () => {
 		setDriveFiles(output);
 	}
 
+	// async function searchForPlagiarismDetector() {
+	// 	let response;
+	// 	try {
+	// 		response = await gapi.client.drive.files.list({
+	// 			'pageSize': 10,
+	// 			'fields': 'files(id, name)',
+	// 			'q': "name contains 'PlagiarismDetector'",
+	// 		});
+	// 	} catch (err) {
+	// 		// document.getElementById('content').innerText = err.message;
+	// 		console.log(err.message)
+	// 		return;
+	// 	}
+	// 	const files = response.result.files;
+	// 	if (!files || files.length == 0) {
+	// 		setDriveFiles('No files found.');
+	// 		return;
+	// 	}
+	// 	// Flatten to string to display
+	// 	const output = files.reduce(
+	// 		(str, file) => `${str}${file.name} (${file.id})\n`,
+	// 		'Files:\n');
+	// 	setDriveFiles(output);
+	// }
+
 	return (
 		<ChakraProvider>
 			<Wrap align='center' m='10' justify={'center'}>
@@ -401,13 +539,13 @@ const App = () => {
 									size: 0,
 								}}
 							onSubmit={async (values, actions) => {
-								console.log(
-									{
-										fileName: values.file.name,
-										type: values.file.type,
-										size: `${values.file.size} bytes`
-									}
-								)
+								// console.log(
+								// 	{
+								// 		fileName: values.file.name,
+								// 		type: values.file.type,
+								// 		size: `${values.file.size} bytes`
+								// 	}
+								// )
 							}}
 						>
 							{(props) => (
@@ -416,27 +554,41 @@ const App = () => {
 										{({ field, form }) => (
 											<FormControl isInvalid={form.errors.file && form.touched.file}>
 												<FormLabel>File</FormLabel>
-												<Input {...field} type='file' id='file' placeholder='Choose Files' onChange={(e)=>{
+												{/* TODO: spinner untile file is uploading */}
+												<Input {...field} type='file' id='file' placeholder='Choose Files' isDisabled={!authorized} onChange={(e) => {
 													handleUpload(e)
-													// do not use setStates with Files causes reloading of google scripts
+													// do not use setStates with Files as that causes reloading of google scripts
 												}} />
 												<FormErrorMessage>{form.errors.file}</FormErrorMessage>
 											</FormControl>
 										)}
 									</Field>
 									{/* <Input pl='0' pr={'10'} pt='10' pb='10' placeholder="Choose" size={'lg'} variant='' colorScheme='green' type="file" /> */}
-									<Button pr='8' pl='8' type='submit' isLoading={props.isSubmitting} >Upload file</Button>
+									{/* <Button pr='8' pl='8' type='submit' isLoading={props.isSubmitting} isActive={authorized} >Upload file</Button> */}
 								</Form>
 							)}
 						</Formik>
 					</HStack>
-					{filesUploaded && <Text mt='4' color='green'>Files uploaded successfully</Text>}
+					{/* {filesUploaded? <Text mt='4' color='green'>Files uploaded successfully</Text>: null} */}
 					{driveFiles}
 					{/* {driveFiles && <Text mt='4' color='green'>{driveFiles}</Text>} */}
-					<Button mt='4' onClick={handleAuthClick} disabled={!authorize}>Authorize</Button>
+					<Button mt='4' onClick={handleAuthClick} isDisabled={!authorized}>{authorizeText}</Button>
 					{/* <Button mt='4' >Upload</Button> */}
-					<Button mt='4' disabled={!signout}>Signout</Button>
+					<Button mt='4' onClick={handleSignoutClick} isDisabled={!signout}>Signout</Button>
 				</Box>
+				{/* Display uploaded files here */}
+				<Stack direction={'column'} position='fixed' right='40' spacing={4} w='2xs' >
+					<Box h='md' boxShadow={'md'} bgColor={'white'}>{filesData.map((file, index) => {
+						console.log(file.name)
+						return `${file.name}\n`
+					})}</Box>
+					<Stack direction='row'>
+						{/* TODO: Refresh button for fetching files from folder */}
+						<Button>Refresh</Button>
+						{/* TODO: Save results button will upload a .json file to drive with currently calculated data */}
+						<Button>Save Results</Button>
+					</Stack>
+				</Stack>
 			</Flex>
 
 			{/* Load scripts for google authentication */}
