@@ -11,6 +11,8 @@ import {
 	FormLabel,
 	FormErrorMessage,
 	Stack,
+	ListItem,
+	OrderedList,
 }
 	from '@chakra-ui/react';
 import {
@@ -63,14 +65,19 @@ const App = () => {
 		console.log(file);
 
 		// check if a folder named as 'Plagiarism Detector' exists
-		// if not, create one and get its id
-		// if yes, get its id
+		// if not, create one and get its id and upload file
 		if (!folderCreated) {
 			console.log('Folder not created in this session, searching for it on drive...')
-			await searchElseCreateFolder();
+			await searchElseCreateFolder().then((folderId) => {
+				console.log(folderId);
+				uploadFile(file, file.name, file.size);
+			});
 		}
-		console.log(folderId);
-		await uploadFile(file, file.name, file.size);
+		// if yes, get its id and upload file
+		else {
+			console.log(folderId);
+			await uploadFile(file, file.name, file.size);
+		}
 	}
 
 	const searchElseCreateFolder = async () => {
@@ -113,6 +120,7 @@ const App = () => {
 						duration: 5000,
 						isClosable: true,
 					})
+					return data.files[0].id;
 				}
 			})
 			.catch(error => {
@@ -167,6 +175,7 @@ const App = () => {
 					duration: 5000,
 					isClosable: true,
 				})
+				return data.id;
 			})
 			.catch((error) => {
 				console.log(error);
@@ -232,6 +241,13 @@ const App = () => {
 						if (response.status === 200) {
 							console.log(response);
 							setFileUploaded(true);
+							toast({
+								title: 'File uploaded',
+								description: 'File uploaded successfully',
+								status: 'success',
+								duration: 5000,
+								isClosable: true,
+							})
 							return response.json();
 						}
 						else {
@@ -251,6 +267,39 @@ const App = () => {
 					.catch((error) => {
 						console.log(error);
 					})
+			})
+			.catch((error) => {
+				console.log(error);
+			})
+	}
+
+	// get files from folder
+	const getFiles = async () => {
+		await fetch(`https://www.googleapis.com/drive/v3/files?q=%27${folderId}%27%20in%20parents%20AND%20trashed%3Dfalse`, {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${token}`
+			}
+		})
+			.then((response) => {
+				if (response.status === 200) {
+					console.log(response);
+					return response.json();
+				}
+				else {
+					toast({
+						title: `Error ${response.status}`,
+						description: `Error in getting files: ${response.statusText}`,
+						status: 'error',
+						duration: 5000,
+						isClosable: true,
+					})
+				}
+			})
+			.then((data) => {
+				console.log(data);
+				setFilesData(data.files);
 			})
 			.catch((error) => {
 				console.log(error);
@@ -428,7 +477,7 @@ const App = () => {
 				// document.getElementById('signout_button').style.visibility = 'visible';
 				setSignout(true);
 				// document.getElementById('authorize_button').innerText = 'Refresh';
-				setAuthorizeText('Refresh');
+				setAuthorizeText('ReAuthenticate');
 				setAuthorized(true);
 				setToken(gapi.client.getToken().access_token);
 				await listFiles();
@@ -572,19 +621,21 @@ const App = () => {
 					{/* {filesUploaded? <Text mt='4' color='green'>Files uploaded successfully</Text>: null} */}
 					{driveFiles}
 					{/* {driveFiles && <Text mt='4' color='green'>{driveFiles}</Text>} */}
-					<Button mt='4' onClick={handleAuthClick} isDisabled={!authorized}>{authorizeText}</Button>
+					<Button mt='4' onClick={handleAuthClick}>{authorizeText}</Button>
 					{/* <Button mt='4' >Upload</Button> */}
 					<Button mt='4' onClick={handleSignoutClick} isDisabled={!signout}>Signout</Button>
 				</Box>
 				{/* Display uploaded files here */}
 				<Stack direction={'column'} position='fixed' right='40' spacing={4} w='2xs' >
-					<Box h='md' boxShadow={'md'} bgColor={'white'}>{filesData.map((file, index) => {
-						console.log(file.name)
-						return `${file.name}\n`
-					})}</Box>
+					<Box h='md' boxShadow={'md'} bgColor={'white'}>
+						<OrderedList>
+						{filesData.map((file, index) => {
+						return (<ListItem key={index}>{file.name}</ListItem>);
+						})}
+						</OrderedList>
+					</Box>
 					<Stack direction='row'>
-						{/* TODO: Refresh button for fetching files from folder */}
-						<Button>Refresh</Button>
+						<Button onClick={getFiles}>Refresh</Button>
 						{/* TODO: Save results button will upload a .json file to drive with currently calculated data */}
 						<Button>Save Results</Button>
 					</Stack>
