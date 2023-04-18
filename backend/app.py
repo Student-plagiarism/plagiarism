@@ -23,41 +23,53 @@ def compare():
         print("hello")
         comparison_result = pysimilar.compare_documents('uploaded_files')
         print(comparison_result)
+        # return the comparison result in json format
+        return {"message": comparison_result}
     except:
-        print("word")
+        return {"message": "An error occurred"}
 
 @app.route("/upload", methods=['GET', 'POST'])
 def upload():
-    if request.method == 'POST':
-        # check if the post request body is a json object
-        if request.is_json:
-            # parse the json object array
-            data = request.get_json()
-            print(data)
+    try:
+        if request.method == 'POST':
+            # check if the post request body is a json object
+            if request.is_json:
+                # parse the json object array
+                data = request.get_json()
+                print(data)
 
-            # create a folder named uploaded_files if it doesn't exist
-            if not os.path.exists(app.config['UPLOAD_FOLDER']):
-                os.makedirs(app.config['UPLOAD_FOLDER'])
-
-            # iterate through the json object array and create a file for each json object
-            for i in data:
-                filename = secure_filename(i['name']).replace(".pdf", "")
-                file = open(os.path.join(app.config['UPLOAD_FOLDER'], filename+'.txt'), "w")
-                file.write(i['body'])
+                # save the request to a file
+                file = open("data.json", "w")
+                file.write(str(data))
                 file.close()
 
-            # read all the filenames in the uploaded_files folder
-            filenames = os.listdir(app.config['UPLOAD_FOLDER'])
-            # print(filenames)
-            # create json object consisting of file names inside the uploaded_files folder
-            file_names = []
-            for i in filenames:
-                file_names.append(i)
-            return {"message": file_names}
+                # create a folder named uploaded_files if it doesn't exist
+                if not os.path.exists(app.config['UPLOAD_FOLDER']):
+                    os.makedirs(app.config['UPLOAD_FOLDER'])
+
+                # iterate through the json object array and create a file for each json object
+                for i in data:
+                    filename = secure_filename(i['name']).replace(".pdf", "")
+                    file = open(os.path.join(app.config['UPLOAD_FOLDER'], filename+'.txt'), "w")
+                    file.write(i['body'])
+                    file.close()
+
+                # read all the filenames in the uploaded_files folder
+                filenames = os.listdir(app.config['UPLOAD_FOLDER'])
+                # print(filenames)
+                # create json object consisting of file names inside the uploaded_files folder
+                file_names = []
+                for i in filenames:
+                    file_names.append(i.replace(".txt", ".pdf"))
+                return {"message": file_names}
+
+            else:
+                # return a response in json format
+                return {"message": "The request payload is not in JSON format"}
 
         else:
-            # return a response in json format
-            return {"message": "The request payload is not in JSON format"}
+            return "Ping Successful"
 
-    else:
-        return "Ping Successful"
+    except:
+        # return error response in json format
+        return {"message": "An error occurred"}

@@ -11,10 +11,25 @@ import {
   FormLabel,
   FormErrorMessage,
   Stack,
+  Spacer,
   ListItem,
   OrderedList,
+  Table,
+  Thead,
+  Tbody,
+  Tfoot,
+  Tr,
+  Th,
+  Td,
+  TableCaption,
+  TableContainer,
 }
   from '@chakra-ui/react';
+import {
+  CheckIcon,
+  CheckCircleIcon
+}
+  from '@chakra-ui/icons';
 import {
   Field,
   Form,
@@ -33,11 +48,14 @@ const App = () => {
   const [folderId, setFolderId] = useState('');
   const [folderName, setFolderName] = useState('');
   const [folderCreated, setFolderCreated] = useState(false);
-  const [fileUploaded, setFileUploaded] = useState(false);
+  const [filesUploaded, setFilesUploaded] = useState(false);
   // const [files, setFiles] = useState([]);
   const [filesData, setFilesData] = useState([]);
   const [driveFiles, setDriveFiles] = useState(null);
   const [fileBody, setFileBody] = useState(filesData);
+  const [filesReady, setFilesReady] = useState([]);
+  const [comparisonResult, setComparisonResult] = useState([]);
+  const [individualCompRes, setIndividualCompRes] = useState([]);
   const [filesIds, setFilesIds] = useState([]);
   const [filesConverted, setFilesConverted] = useState(false);
   const [filesConvertedIds, setFilesConvertedIds] = useState([]);
@@ -48,6 +66,7 @@ const App = () => {
   const [authorizeText, setAuthorizeText] = useState('Authorize');
   const [token, setToken] = useState('');
   const [comparisonDone, setComparisonDone] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const toast = useToast();
   const router = useRouter();
@@ -200,7 +219,7 @@ const App = () => {
     const file = e.target.files[0];
     console.log(file);
 
-    // if folder e, get its id and upload file
+    // if folder exists in the session, get its id and upload file
     // else {
     console.log(folderId);
     await uploadFile(file, file.name, file.size);
@@ -217,7 +236,7 @@ const App = () => {
   }
 
   const searchElseCreateFolder = async () => {
-    await fetch(`https://www.googleapis.com/drive/v3/files?q=name='Plagiarism%20Detector'&key=${process.env.NEXT_PUBLIC_API_KEY}`, {
+    await fetch(`https://www.googleapis.com/drive/v3/files?q=name='Plagiarism%20Detector'%20AND%20trashed%3Dfalse&key=${process.env.NEXT_PUBLIC_API_KEY}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -327,7 +346,8 @@ const App = () => {
 
   const uploadFile = async (file, fileName, size) => {
     const fileMetadata = {
-      name: fileName,
+      // replace spaces with underscores
+      name: fileName.replace(/\s/g, '_'),
       parents: [folderId],
       mimeType: 'application/vnd.google-apps.document'
     };
@@ -344,10 +364,25 @@ const App = () => {
       },
       body: JSON.stringify(fileMetadata)
     })
-      .then((response) => {
+      .then(async (response) => {
         if (response.status === 200) {
           console.log(response);
-          return response.json();
+          let response_msg = await response.json();
+          toast({
+            title: `${response_msg.name} metadata created`,
+            description: 'File metadata created successfully',
+            status: 'success',
+            duration: 5000,
+            isClosable: true,
+          })
+          setLoading(true);
+          toast({
+            title: 'Uploading file',
+            description: 'File is being uploaded. Please wait...',
+            status: 'loading',
+            isClosable: false,
+          })
+          return response_msg;
         }
         else {
           toast({
@@ -374,16 +409,9 @@ const App = () => {
           body: fileData
         })
           .then((response) => {
+
             if (response.status === 200) {
               console.log(response);
-              setFileUploaded(true);
-              toast({
-                title: 'File uploaded',
-                description: 'File uploaded successfully',
-                status: 'success',
-                duration: 5000,
-                isClosable: true,
-              })
               return response.json();
             }
             else {
@@ -398,6 +426,14 @@ const App = () => {
           })
           .then((data) => {
             console.log(data);
+            setLoading(false);
+            toast({
+              title: `${data.name} uploaded`,
+              description: 'File uploaded successfully',
+              status: 'success',
+              duration: 5000,
+              isClosable: true,
+            })
             setFilesData([...filesData, data]);
           })
           .catch((error) => {
@@ -578,13 +614,24 @@ const App = () => {
         .then((data) => {
           console.log(data)
           console.log(filesData)
-          setFileBody([
-            ...fileBody,
-            {
-              id: fileId,
-              body: data
-            }
-          ]);
+
+          setFileBody(
+            // _prevFileBody => (
+            filesData.map((file, index) => {
+              if (file.id === fileId) {
+                return {
+                  id: fileId,
+                  body: data,
+                  ...file
+                }
+              }
+              else {
+                return fileBody[index]
+              }
+            })
+            // )
+          );
+
           console.log(fileBody)
         })
         .catch((error) => {
@@ -601,7 +648,6 @@ const App = () => {
     filesData.map(async (file) => {
       await exportFile(file.id);
     })
-    // uploadToBackend();
     // console.log(body);
   }
 
@@ -612,13 +658,68 @@ const App = () => {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      body: JSON.stringify(fileBody)
+      body: JSON.stringify(fileBody.filter(x => x))
     })
-      .then((response) => {
+      .then(async (response) => {
         console.log(response);
+        if (response.status === 200) {
+          toast({
+            title: "Files are Ready",
+            description: "Your files are ready to be checked for plagiarism.",
+            status: "success",
+            duration: 9000,
+            isClosable: true,
+          })
+          let fileNames = await response.json()
+          console.log(fileNames?.message)
+          setFilesReady(fileNames.message);
+        }
       }, (error) => {
         console.log(error);
       });
+  }
+
+  // compare files
+  async function compareFiles() {
+    await fetch('http://localhost:5000/compare', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
+      },
+    })
+      .then(async (response) => {
+        console.log(response);
+        if (response.status === 200) {
+          toast({
+            title: "Comparison Successful",
+            description: "Your files are ready to be checked for plagiarism.",
+            status: "success",
+            duration: 9000,
+            isClosable: true,
+          })
+          setComparisonDone(true);
+          let res_ComparisonResult = await response.json()
+          setComparisonResult(res_ComparisonResult.message);
+          console.log(res_ComparisonResult.message)
+        }
+      }, (error) => {
+        console.log(error);
+      });
+  }
+
+  // display comparison result
+  const findFileComparisonRes = async (name) => {
+    let fileComparisonRes = comparisonResult.filter((file) => {
+      file[0].includes(name.replace(/.pdf/g, ''))
+    });
+    //   console.log(res)
+    //   return res
+    // });
+    console.log(fileComparisonRes)
+    return fileComparisonRes;
+    // setIndividualCompRes(comparisonResult.filter((file) => file[0].includes(name.replace(/.pdf/g, ''))));
+    // setIndividualCompRes(fileComparisonRes);
+
   }
 
   return (
@@ -650,7 +751,7 @@ const App = () => {
                   <Field name='File' as={Input} placeholder='Choose Files' >
                     {({ field, form }) => (
                       <FormControl isInvalid={form.errors.file && form.touched.file}>
-                        <FormLabel>File</FormLabel>
+                        <FormLabel>Choose File</FormLabel>
                         {/* TODO: spinner untile file is uploading */}
                         {folderCreated ? <Input {...field} type='file' id='file' placeholder='Choose Files' isDisabled={!authorized} onChange={(e) => {
                           handleUpload(e)
@@ -670,21 +771,60 @@ const App = () => {
           {driveFiles}
           {/* {driveFiles && <Text mt='4' color='green'>{driveFiles}</Text>} */}
           <Button mt='4' onClick={handleAuthClick}>{authorizeText}</Button>
-          {/* <Button mt='4' >Upload</Button> */}
+          <Button mt='4' onClick={compareFiles}>Compare</Button>
+          <Box>{individualCompRes}</Box>
           <Button mt='4' onClick={handleSignoutClick} isDisabled={!signout}>Signout</Button>
         </Box>
         {/* Display uploaded files here */}
         <Stack direction={'column'} position='fixed' right='40' spacing={4} w='2xs' >
           <Box borderRadius={'md'} overflow={'auto'} h='md' boxShadow={'md'} bgColor={'white'}>
+            <Flex w={'100%'} bgColor={'gray.100'}>
+              <Box fontSize={'x-small'} pt={'2'} fontWeight={'light'}>S.No.</Box>
+              <Box w={'62%'} align={'center'} p={'2'} fontSize={'small'} fontWeight={'bold'}>Files</Box>
+              <Button fontSize={'xs'} size='sm' bgColor={'blue.100'} boxShadow={'base'} fontWeight={'light'} onClick={exportAll}>ExportAll</Button>
+            </Flex>
             <OrderedList p={'2'}>
+              {/* <TableContainer>
+                <Table size={'sm'} variant={'striped'}>
+                  <Thead>
+                    <Tr>
+                      <Th>Files</Th>
+                      <Th>Export</Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody> */}
+              {/* <Flex w={'100%'}> */}
+              {/* </Flex> */}
               {filesData.map((file, index) => {
-                return (<ListItem key={index} textDecor={'underline'} onClick={() => exportCurrent(file)}>{file.name}</ListItem>);
+                return (
+                  <Flex>
+                    <ListItem border={'1px'} bgColor={index % 2 ? 'gray.50' : ''} key={file?.id} p={'1'} w={'75%'} textDecor={comparisonResult ? 'underline' : null} onClick={() => findFileComparisonRes(file?.name)} >{file?.name}</ListItem>
+                    <Spacer />
+                    {
+                      fileBody?.find((fileInside) => {
+                        return (fileInside?.id == file.id && fileInside?.body)
+                      })
+                        ? (
+                          filesReady?.find((singleFile) => {
+                            return (file.name == singleFile)
+                          })
+                            ? <CheckCircleIcon color={'green'} />
+                            : <CheckIcon />
+                        )
+                        : <Button size={'xs'} boxShadow={'md'} onClick={() => exportFile(file.id)}>Export</Button>
+                    }
+                  </Flex>
+                );
+                // return (<Tr key={index}><Td maxW={'10'}>{file.name}</Td><Td><Button size={'xs'} onClick={() => exportFile(file.id)}>Export</Button></Td></Tr>);
               })}
+              {/* </Tbody>
+              </Table>
+              </TableContainer> */}
             </OrderedList>
           </Box>
           <Stack direction='row'>
             <Button onClick={getFiles}>Refresh</Button>
-            <Button onClick={exportAll}>Prepare Files for comparison</Button>
+            <Button onClick={uploadToBackend} size={'xs'}>Prepare Files for comparison</Button>
             {/* TODO: Save results button will upload a .json file to drive with currently calculated data, Also Add a drive icon into it to give hint*/}
             {comparisonDone ? <Button>Save Results</Button> : null}
           </Stack>
