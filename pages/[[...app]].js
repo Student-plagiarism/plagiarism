@@ -37,7 +37,7 @@ import {
 }
   from 'formik';
 import { useToast } from '@chakra-ui/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Script from 'next/script';
 import { useRouter } from 'next/router';
 // import Plotly from 'plotly.js';
@@ -708,17 +708,32 @@ const App = () => {
   }
 
   // display comparison result
-  const findFileComparisonRes = async (name) => {
-    let fileComparisonRes = comparisonResult.filter((file) => {
-      file[0].includes(name.replace(/.pdf/g, ''))
-    });
-    //   console.log(res)
-    //   return res
-    // });
-    console.log(fileComparisonRes)
-    return fileComparisonRes;
-    // setIndividualCompRes(comparisonResult.filter((file) => file[0].includes(name.replace(/.pdf/g, ''))));
-    // setIndividualCompRes(fileComparisonRes);
+  const findFileComparisonRes = (name) => {
+    if (comparisonResult.length > 1) {
+      let fileComparisonRes = comparisonResult.filter((file) => {
+        return file[0].includes(name.replace(/.pdf/g, ''))
+      });
+
+      console.log(fileComparisonRes)
+      // return fileComparisonRes;
+      return new Promise((resolve, reject) => {
+        resolve(fileComparisonRes)
+      })
+      // setIndividualCompRes(() => fileComparisonRes)
+    }
+    else {
+      console.log(comparisonResult)
+      return comparisonResult;
+    }
+  }
+
+  const displayComparisonResult = (name) => {
+    // let promisify = new Promise(findFileComparisonRes)  
+    findFileComparisonRes(name)
+      .then((res) => {
+        console.log(res)
+        // setIndividualCompRes(res)
+      })
 
   }
 
@@ -798,7 +813,9 @@ const App = () => {
               {filesData.map((file, index) => {
                 return (
                   <Flex>
-                    <ListItem border={'1px'} bgColor={index % 2 ? 'gray.50' : ''} key={file?.id} p={'1'} w={'75%'} textDecor={comparisonResult ? 'underline' : null} onClick={() => findFileComparisonRes(file?.name)} >{file?.name}</ListItem>
+                    <ListItem border={'1px'} bgColor={index % 2 ? 'gray.50' : ''} key={file?.id} p={'1'} w={'75%'} textDecor={comparisonResult ? 'underline' : null} _hover={{ cursor: 'pointer', bgColor: 'gray.100' }}
+                      onClick={() => displayComparisonResult(file?.name)}
+                    >{file?.name}</ListItem>
                     <Spacer />
                     {
                       fileBody?.find((fileInside) => {
