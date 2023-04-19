@@ -849,8 +849,8 @@ const App = () => {
       </Flex>
 
       {/* Load scripts for google authentication */}
-      <Script async defer beforeInteractive src="https://accounts.google.com/gsi/client" onLoad={gisLoaded()} />
       <Script async defer beforeInteractive src="https://apis.google.com/js/api.js" onLoad={gapiLoaded()} />
+      <Script async defer beforeInteractive src="https://accounts.google.com/gsi/client" onLoad={gisLoaded()} />
 
     </ChakraProvider>
 
