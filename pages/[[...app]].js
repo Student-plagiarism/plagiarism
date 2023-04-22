@@ -76,7 +76,7 @@ const App = () => {
     // console.log('authorized', authorized)
 
     if (typeof window !== 'undefined') {
-      console.log('window.location.href', window.location.href.substring(0, window.location.href.length - 1))
+      console.log('window.location.href', window.location.href)
       if (window.location.href.includes('#access_token=')) {
         console.log('access_token', window.location.href.split("#access_token=")[1].split("&token_type")[0])
         const myToken = window.location.href.split("#access_token=")[1].split("&token_type")[0]
@@ -85,7 +85,7 @@ const App = () => {
         setAuthorizeText('Reauthorize')
       }
       else {
-        setRedirectUri(window.location.href.substring(0, window.location.href.length - 1))
+        setRedirectUri(window.location.href)
       }
     }
 
@@ -534,7 +534,7 @@ const App = () => {
       </Wrap>
 
       <Flex w={'6xl'} p={'6'} bgSize={'auto'} m='auto' boxShadow={'2xl'} borderRadius='3xl' border='sm' bgColor={'yellow'} bgGradient='linear(to-l, #7928CA, #FF0080)'>
-        <Box>
+        <Box h={'lg'}>
           <HStack spacing={'16'} w='md'>
             <Formik
               initialValues={
@@ -616,8 +616,8 @@ const App = () => {
           <Button mt='4' onClick={handleSignoutClick} isDisabled={!signout}>Signout</Button>
         </Box>
         {/* Display uploaded files here */}
-        <Stack direction={'column'} position='fixed' right='40' p={"-6"} spacing={4} w='2xs' >
-          <Box borderRadius={'md'} overflow={'auto'} h='md' boxShadow={'md'} bgColor={'white'}>
+        <Stack direction={'column'} position='fixed' right='40' spacing={4} w='2xs' >
+          <Box borderRadius={'md'} overflow={'auto'} h='md' p={"-10"} boxShadow={'md'} bgColor={'white'}>
             <Flex w={'100%'} bgColor={'gray.100'}>
               <Box fontSize={'x-small'} pt={'2'} fontWeight={'light'}>S.No.</Box>
               <Box w={'62%'} align={'center'} p={'2'} fontSize={'small'} fontWeight={'bold'}>Files</Box>
