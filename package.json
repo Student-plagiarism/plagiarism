@@ -21,6 +21,7 @@
     "plotly.js": "^2.20.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-draggable": "^4.4.5",
     "tls": "^0.0.1",
     "web-vitals": "^2.1.4"
   },

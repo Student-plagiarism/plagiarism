@@ -3,15 +3,15 @@ A web app to detect plagiarism percentage in multiple uploaded PDF files.
 > ⚠️ This web app tries to keep the process as fast as possible and hence the trade off in OCR comes with quality. It's efficiency is maximum for PDFs consisting machine readable fonts(computer typed text). However, it's just workable for handwritten PDFs. OCR efficiency also depends upon the scan quality of PDFs. So make sure to have good lighting and resolution when creating PDFs.
 
 ### Setup locally
-Step 1: Clone the repository
+🚩 Step 1: Clone the repository
 ```bash
 git clone https://github.com/Student-plagiarism/plagiarism.git
 ```
-Step 2: Move into directory
+🚩 Step 2: Move into directory
 ```bash
 cd plagiarism
 ```
-Step 3: Create required Google Drive Credentials  
+🚩 Step 3: Create required Google Drive Credentials  
     1. [Enable Google drive api in a Google Cloud Project](https://console.cloud.google.com/flows/enableapi?apiid=drive.googleapis.com)  
     2. [Create Authorisation credentials](https://console.cloud.google.com/apis/credentials)  
         - For **Authorized JavaScript origins** - use `http://localhost:3000`.  
@@ -22,24 +22,24 @@ You can follow more detailed instructions from [Set up your environment](https:/
 
 Rename `.env.local.example` to `.env.local` and put your credentials inside the file.
 
-Step 4: Start frontend from the top of folder
+🚩 Step 4: Start frontend from the top of folder
 |npm | yarn | pnpm |
 |----|------|------|
 |`npm install`|`yarn install` | `pnpm install`|
 |`npm build`|`yarn build`|`pnpm build`|
 |`npm start`|`yarn start`|`pnpm start`|
 
-Step 5: Open another tab of shell for turning up backend and then move into it's folder
+🚩 Step 5: Open another tab of shell for turning up backend and then move into it's folder
 ```bash
 cd backend
 ```
 
-Step 6: Install all dependencies
+🚩 Step 6: Install all dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-Step 7: Start backend
+🚩 Step 7: Start backend
 ```bash
 flask run
 ```
