@@ -37,6 +37,7 @@ import {
   Formik,
 }
   from 'formik';
+import Draggable from 'react-draggable';
 import SvgGoogleDriveLogo from '../components/SvgGoogleDriveLogo';
 import { useToast } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
@@ -564,7 +565,7 @@ const App = () => {
                           // do not use setStates with Files as that causes reloading of google scripts
                         }} />
                           : (authorized
-                            ? <Button leftIcon={<SvgGoogleDriveLogo height={"20"}/>} onClick={setUpFolder}> Set up Folder</Button>
+                            ? <Button leftIcon={<SvgGoogleDriveLogo height={"20"} />} onClick={setUpFolder}> Set up Folder</Button>
                             : null)
                         }
                         <FormErrorMessage>{form.errors.file}</FormErrorMessage>
@@ -588,34 +589,35 @@ const App = () => {
           {filesReady && filesReady.length > 0 && <Button mt='4' onClick={compareFiles}>Compare</Button>}
           {individualCompRes && individualCompRes.length > 0
             ? (
-            <TableContainer p={'4'} borderColor={'gray'} borderRadius={'lg'} boxShadow={'md'}>
-              <Table size={'sm'} variant={'striped'}>
-                <TableCaption>Comparison Result</TableCaption>
-                <Thead>
-                  <Tr>
-                    <Th>S.No.</Th>
-                    <Th>File Names</Th>
-                    <Th>Similarity</Th>
-                  </Tr>
-                </Thead>
-                <Tbody>
-                  {individualCompRes.map((file, index) => {
-                    return (
-                      <Tr key={index}>
-                        <Td>{index + 1}</Td>
-                        <Td>{file[0]}</Td>
-                        <Td isNumeric>{roundToTwo(file[1] * 100) + '%'}</Td>
-                      </Tr>
-                    )
-                  })}
-                </Tbody>
-              </Table>
-            </TableContainer>)
+              <TableContainer p={'4'} borderColor={'gray'} borderRadius={'lg'} boxShadow={'md'}>
+                <Table size={'sm'} variant={'striped'}>
+                  <TableCaption>Comparison Result</TableCaption>
+                  <Thead>
+                    <Tr>
+                      <Th>S.No.</Th>
+                      <Th>File Names</Th>
+                      <Th>Similarity</Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {individualCompRes.map((file, index) => {
+                      return (
+                        <Tr key={index}>
+                          <Td>{index + 1}</Td>
+                          <Td>{file[0]}</Td>
+                          <Td isNumeric>{roundToTwo(file[1] * 100) + '%'}</Td>
+                        </Tr>
+                      )
+                    })}
+                  </Tbody>
+                </Table>
+              </TableContainer>)
             : null
           }
           <Button mt='4' onClick={handleSignoutClick} isDisabled={!signout}>Signout</Button>
         </Box>
         {/* Display uploaded files here */}
+        <Draggable>
         <Stack direction={'column'} position='fixed' right='40' spacing={4} w='2xs' >
           <Box borderRadius={'md'} overflow={'auto'} h='md' p={"-10"} boxShadow={'md'} bgColor={'white'}>
             <Flex w={'100%'} bgColor={'gray.100'}>
@@ -671,6 +673,7 @@ const App = () => {
             {comparisonDone ? <Button>Save Results</Button> : null}
           </Stack>
         </Stack>
+        </Draggable>
       </Flex>
     </ChakraProvider>
   );
