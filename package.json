@@ -31,7 +31,6 @@
   },
   "eslintConfig": {
     "extends": [
-      "react-app",
       "react-app/jest"
     ]
   },
@@ -52,5 +51,8 @@
     "path": false,
     "os": false,
     "crypto": false
+  },
+  "devDependencies": {
+    "eslint": "^8.38.0"
   }
 }

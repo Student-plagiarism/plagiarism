@@ -14,10 +14,11 @@ import {
   Spacer,
   ListItem,
   OrderedList,
+  LinkBox,
+  LinkOverlay,
   Table,
   Thead,
   Tbody,
-  Tfoot,
   Tr,
   Th,
   Td,
@@ -36,44 +37,30 @@ import {
   Formik,
 }
   from 'formik';
+import SvgGoogleDriveLogo from '../components/SvgGoogleDriveLogo';
 import { useToast } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
-import Script from 'next/script';
-import { useRouter } from 'next/router';
-// import Plotly from 'plotly.js';
 
 const App = () => {
-  const [filesNames, setFilesNames] = useState([]);
-  const [sessionUri, setSessionUri] = useState('');
   const [folderId, setFolderId] = useState('');
-  const [folderName, setFolderName] = useState('');
+  // const [folderName, setFolderName] = useState('');
   const [folderCreated, setFolderCreated] = useState(false);
-  const [filesUploaded, setFilesUploaded] = useState(false);
-  // const [files, setFiles] = useState([]);
   const [filesData, setFilesData] = useState([]);
   const [driveFiles, setDriveFiles] = useState(null);
   const [fileBody, setFileBody] = useState(filesData);
   const [filesReady, setFilesReady] = useState([]);
   const [comparisonResult, setComparisonResult] = useState([]);
   const [individualCompRes, setIndividualCompRes] = useState([]);
-  const [filesIds, setFilesIds] = useState([]);
-  const [filesConverted, setFilesConverted] = useState(false);
-  const [filesConvertedIds, setFilesConvertedIds] = useState([]);
-  const [filesConvertedNames, setFilesConvertedNames] = useState([]);
-  const [filesConvertedLinks, setFilesConvertedLinks] = useState([]);
   const [authorized, setAuthorized] = useState(false);
   const [signout, setSignout] = useState(false);
   const [authorizeText, setAuthorizeText] = useState('Authorize');
   const [token, setToken] = useState('');
   const [comparisonDone, setComparisonDone] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [redirectUri, setRedirectUri] = useState('http://localhost:3000/');
 
   const toast = useToast();
-  const router = useRouter();
-
-  let tokenClient;
-  let gapiInited = false;
-  let gisInited = false;
+  // const router = useRouter();
 
   // Discovery doc URL for APIs used by the quickstart
   const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
@@ -82,110 +69,30 @@ const App = () => {
   // included, separated by spaces.
   const SCOPES = 'https://www.googleapis.com/auth/drive';
 
+  const authorization_uri = `https://accounts.google.com/o/oauth2/v2/auth?redirect_uri=${redirectUri}&prompt=consent&response_type=token&client_id=${process.env.NEXT_PUBLIC_CLIENT_ID}&scope=${SCOPES}&access_type=online`;
 
-  //  Callback after api.js is loaded. 
-  async function gapiLoaded() {
-    console.log('gapi loaded')
-    try {
-      gapi.load('client', initializeGapiClient)
+  useEffect(() => {
+    // console.log('useEffect')
+    // console.log('authorized', authorized)
 
-    } catch (error) {
-      console.log(error)
-      // router.reload();
-    }
-  }
-
-  // Callback after the API client is loaded. Loads the discovery doc to initialize the API.
-  function initializeGapiClient() {
-    console.log('gapi client loaded')
-    gapi.client.init({
-      apiKey: process.env.NEXT_PUBLIC_API_KEY,
-      discoveryDocs: [DISCOVERY_DOC],
-    })
-    // .then(() => {
-    gapiInited = true
-    // setGapiInited(true);
-    maybeEnableButtons();
-    // })
-  }
-
-  // Callback after Google Identity Services are loaded.
-  async function gisLoaded() {
-    try {
-      console.log('gis loaded')
-      tokenClient = await google.accounts.oauth2.initTokenClient({
-        client_id: process.env.NEXT_PUBLIC_CLIENT_ID,
-        scope: SCOPES,
-        callback: ((response) => {
-          console.log("callback response", response)
-          setToken(response.access_token)
-        }), // defined later
-      });
-      gisInited = true;
-      // setGisInited(true);
-      maybeEnableButtons();
-    } catch (err) {
-      // document.getElementById('content').innerText = err.message;
-      console.log(err.message)
-    }
-  }
-
-  //  Enables user interaction after all libraries are loaded.
-  async function maybeEnableButtons() {
-    if (gapiInited && gisInited) {
-      // document.getElementById('authorize_button').style.visibility = 'visible';
-      setAuthorized(true);
-    }
-  }
-
-  //   Sign in the user upon button click.
-  async function handleAuthClick() {
-    // await gapiLoaded()
-    // 	.then(() => {
-    // 		if (tokenClient === undefined) {
-    // 			gisLoaded().then(() => {
-    try {
-      tokenClient.callback = async (resp) => {
-        if (resp.error !== undefined) {
-          throw (resp);
-        }
-        // document.getElementById('signout_button').style.visibility = 'visible';
-        setSignout(true);
-        // document.getElementById('authorize_button').innerText = 'Refresh';
-        setAuthorizeText('ReAuthenticate');
-        setAuthorized(true);
-        setToken(gapi.client.getToken().access_token);
-        await listFiles();
-        toast({
-          title: "Authenticated",
-          description: "You have successfully authenticated with Google Drive",
-          status: "success",
-          duration: 9000,
-          isClosable: true,
-        })
+    if (typeof window !== 'undefined') {
+      console.log('window.location.href', window.location.href.substring(0, window.location.href.length - 1))
+      if (window.location.href.includes('#access_token=')) {
+        console.log('access_token', window.location.href.split("#access_token=")[1].split("&token_type")[0])
+        const myToken = window.location.href.split("#access_token=")[1].split("&token_type")[0]
+        setToken(myToken) // access token
+        setAuthorized(true)
+        setAuthorizeText('Reauthorize')
+      }
+      else {
+        setRedirectUri(window.location.href.substring(0, window.location.href.length - 1))
       }
     }
-    catch (err) {
-      // document.getElementById('content').innerText = err.message;
-      console.log(err.message)
-      // return;
-    }
 
-    console.log("tokenClient", tokenClient)
-    try {
-      if (gapi.client.getToken() === null) {
-        // Prompt the user to select a Google Account and ask for consent to share their data
-        // when establishing a new session.
-        tokenClient.requestAccessToken({ prompt: 'consent' });
-      } else {
-        // Skip display of account chooser and consent dialog for an existing session.
-        tokenClient.requestAccessToken({ prompt: '' });
-      }
-    } catch (error) {
-      console.log(error)
+    if (authorized) {
+      console.log('authorized')
     }
-    // })
-  }
+  }, [])
 
   //    *  Sign out the user upon button click.
   function handleSignoutClick() {
@@ -266,7 +173,7 @@ const App = () => {
           console.log('Folder found, getting its id...')
           console.log(data)
           setFolderId(data.files[0].id);
-          setFolderName(data.files[0].name);
+          // setFolderName(data.files[0].name);
           setFolderCreated(true);
           toast({
             title: 'Folder found',
@@ -322,7 +229,7 @@ const App = () => {
       })
       .then((data) => {
         setFolderId(data.id);
-        setFolderName(data.name);
+        // setFolderName(data.name);
         toast({
           title: 'Folder created',
           description: 'Folder named as "Plagiarism Detector" created, uploaded files will be saved in it. Start uploading files now!',
@@ -478,123 +385,6 @@ const App = () => {
       })
   }
 
-  // const convertFiles = async () => {
-  // 	const fileMetadata = {
-  // 		mimeType: 'application/vnd.google-apps.document'
-  // 	};
-  // 	await fetch(`https://www.googleapis.com/drive/v3/files/${filesIds}/copy`, {
-  // 		method: 'POST',
-  // 		headers: {
-  // 			'Content-Type': 'application/json',
-  // 			'Authorization': `Bearer ${token}`
-  // 		},
-  // 		body: JSON.stringify(fileMetadata)
-  // 	})
-  // 		.then((response) => {
-  // 			if (response.status === 200) {
-  // 				setFilesConverted(true);
-  // 				return response.json();
-  // 			}
-  // 		})
-  // 		.then((data) => {
-  // 			setFilesConvertedIds(data.id);
-  // 			setFilesConvertedNames(data.name);
-  // 			setFilesConvertedLinks(data.webViewLink);
-  // 		})
-  // 		.catch((error) => {
-  // 			console.log(error);
-  // 		})
-  // }
-
-  // const uploadWithConversion = async (file, fileName) => {
-  // 	const fileMetadata = {
-
-  // 		name: fileName,
-  // 		parents: [folderId],
-  // 		mimeType: 'application/vnd.google-apps.document'
-  // 	};
-  // 	const media = {
-  // 		mimeType: 'application/pdf',
-  // 		body: file
-  // 	};
-  // 	await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-  // 		method: 'POST',
-  // 		headers: {
-  // 			'Authorization': `Bearer ${token}`,
-
-  // 			'Content-Type': 'application/json; charset=UTF-8',
-  // 			'Accept': 'application/json'
-  // 		},
-  // 		body: JSON.stringify(fileMetadata),
-  // 		media: media
-  // 	})
-  // 		.then((response) => {
-  // 			if (response.status === 200) {
-  // 				setFilesUploaded(true);
-  // 				console.log(response);
-  // 				return response.json();
-  // 			}
-  // 		})
-  // 		.then((data) => { console.log(data) })
-  // 		// .then((data) => {
-  // 		// 	setFilesIds(data.id);
-  // 		// 	const fileMetadata = {
-  // 		// 		mimeType: 'application/vnd.google-apps.document'
-  // 		// 	};
-  // 		// 	fetch(`https://www.googleapis.com/drive/v3/files/${data.id}/copy`, {
-  // 		// 		method: 'POST',
-  // 		// 		headers: {
-  // 		// 			'Content-Type': 'application/json',
-  // 		// 			'Authorization': `Bearer ${token}`
-  // 		// 		},
-  // 		// 		body: JSON.stringify(fileMetadata)
-  // 		// 	})
-  // 		// 		.then((response) => {
-  // 		// 			if (response.status === 200) {
-  // 		// 				setFilesConverted(true);
-  // 		// 				return response.json();
-  // 		// 			}
-  // 		// 		})
-  // 		// 		.then((data) => {
-  // 		// 			setFilesConvertedIds(data.id);
-  // 		// 			setFilesConvertedNames(data.name);
-  // 		// 			setFilesConvertedLinks(data.webViewLink);
-  // 		// 		})
-  // 		// 		.catch((error) => {
-  // 		// 			console.log(error);
-  // 		// 		})
-  // 		// })
-  // 		.catch((error) => {
-  // 			console.log(error);
-  // 		})
-  // }
-
-
-  // Print metadata for first 10 files.
-  async function listFiles() {
-    let response;
-    try {
-      response = await gapi.client.drive.files.list({
-        'pageSize': 10,
-        'fields': 'files(id, name)',
-      });
-    } catch (err) {
-      // document.getElementById('content').innerText = err.message;
-      console.log(err.message)
-      return;
-    }
-    const files = response.result.files;
-    if (!files || files.length == 0) {
-      setDriveFiles('No files found.');
-      return;
-    }
-    // Flatten to string to display
-    const output = files.reduce(
-      (str, file) => `${str}${file.name} (${file.id})\n`,
-      'Files:\n');
-    setDriveFiles(output);
-  }
-
   // export files as text/plain
   async function exportFile(fileId) {
     try {
@@ -638,7 +428,6 @@ const App = () => {
           console.log(error);
         })
     } catch (err) {
-      // document.getElementById('content').innerText = err.message;
       console.log(err.message)
       return;
     }
@@ -648,7 +437,6 @@ const App = () => {
     filesData.map(async (file) => {
       await exportFile(file.id);
     })
-    // console.log(body);
   }
 
   async function uploadToBackend() {
@@ -719,7 +507,6 @@ const App = () => {
       return new Promise((resolve, reject) => {
         resolve(fileComparisonRes)
       })
-      // setIndividualCompRes(() => fileComparisonRes)
     }
     else {
       console.log(comparisonResult)
@@ -728,13 +515,16 @@ const App = () => {
   }
 
   const displayComparisonResult = (name) => {
-    // let promisify = new Promise(findFileComparisonRes)  
     findFileComparisonRes(name)
       .then((res) => {
         console.log(res)
-        // setIndividualCompRes(res)
+        setIndividualCompRes(res)
       })
 
+  }
+
+  function roundToTwo(num) {
+    return +(Math.round(num + "e+2") + "e-2");
   }
 
   return (
@@ -742,8 +532,9 @@ const App = () => {
       <Wrap align='center' m='10' justify={'center'}>
         <Heading >Plagiarism detector for Class Assignments</Heading>
       </Wrap>
-      <Flex w={'6xl'} justify='center' bgSize={'auto'} m='auto' boxShadow={'2xl'} borderRadius='3xl' border='sm' bgColor={'yellow'} bgGradient='linear(to-l, #7928CA, #FF0080)'>
-        <Box h='xl' mr='72' w='2xs' >
+
+      <Flex w={'6xl'} p={'6'} bgSize={'auto'} m='auto' boxShadow={'2xl'} borderRadius='3xl' border='sm' bgColor={'yellow'} bgGradient='linear(to-l, #7928CA, #FF0080)'>
+        <Box>
           <HStack spacing={'16'} w='md'>
             <Formik
               initialValues={
@@ -771,7 +562,11 @@ const App = () => {
                         {folderCreated ? <Input {...field} type='file' id='file' placeholder='Choose Files' isDisabled={!authorized} onChange={(e) => {
                           handleUpload(e)
                           // do not use setStates with Files as that causes reloading of google scripts
-                        }} /> : <Button onClick={setUpFolder}>drive_logo Set up Folder</Button>}
+                        }} />
+                          : (authorized
+                            ? <Button leftIcon={<SvgGoogleDriveLogo height={"20"}/>} onClick={setUpFolder}> Set up Folder</Button>
+                            : null)
+                        }
                         <FormErrorMessage>{form.errors.file}</FormErrorMessage>
                       </FormControl>
                     )}
@@ -785,13 +580,43 @@ const App = () => {
           {/* {filesUploaded? <Text mt='4' color='green'>Files uploaded successfully</Text>: null} */}
           {driveFiles}
           {/* {driveFiles && <Text mt='4' color='green'>{driveFiles}</Text>} */}
-          <Button mt='4' onClick={handleAuthClick}>{authorizeText}</Button>
-          <Button mt='4' onClick={compareFiles}>Compare</Button>
-          <Box>{individualCompRes}</Box>
+          <LinkBox>
+            <LinkOverlay href={authorization_uri}>
+              <Button mt='4'>{authorizeText}</Button>
+            </LinkOverlay>
+          </LinkBox>
+          {filesReady && filesReady.length > 0 && <Button mt='4' onClick={compareFiles}>Compare</Button>}
+          {individualCompRes && individualCompRes.length > 0
+            ? (
+            <TableContainer p={'4'} borderColor={'gray'} borderRadius={'lg'} boxShadow={'md'}>
+              <Table size={'sm'} variant={'striped'}>
+                <TableCaption>Comparison Result</TableCaption>
+                <Thead>
+                  <Tr>
+                    <Th>S.No.</Th>
+                    <Th>File Names</Th>
+                    <Th>Similarity</Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {individualCompRes.map((file, index) => {
+                    return (
+                      <Tr key={index}>
+                        <Td>{index + 1}</Td>
+                        <Td>{file[0]}</Td>
+                        <Td isNumeric>{roundToTwo(file[1] * 100) + '%'}</Td>
+                      </Tr>
+                    )
+                  })}
+                </Tbody>
+              </Table>
+            </TableContainer>)
+            : null
+          }
           <Button mt='4' onClick={handleSignoutClick} isDisabled={!signout}>Signout</Button>
         </Box>
         {/* Display uploaded files here */}
-        <Stack direction={'column'} position='fixed' right='40' spacing={4} w='2xs' >
+        <Stack direction={'column'} position='fixed' right='40' p={"-6"} spacing={4} w='2xs' >
           <Box borderRadius={'md'} overflow={'auto'} h='md' boxShadow={'md'} bgColor={'white'}>
             <Flex w={'100%'} bgColor={'gray.100'}>
               <Box fontSize={'x-small'} pt={'2'} fontWeight={'light'}>S.No.</Box>
@@ -840,20 +665,14 @@ const App = () => {
             </OrderedList>
           </Box>
           <Stack direction='row'>
-            <Button onClick={getFiles}>Refresh</Button>
-            <Button onClick={uploadToBackend} size={'xs'}>Prepare Files for comparison</Button>
+            {folderCreated ? (<Button onClick={getFiles}>Refresh</Button>) : null}
+            {fileBody && <Button onClick={uploadToBackend} size={'xs'}>Prepare Files for comparison</Button>}
             {/* TODO: Save results button will upload a .json file to drive with currently calculated data, Also Add a drive icon into it to give hint*/}
             {comparisonDone ? <Button>Save Results</Button> : null}
           </Stack>
         </Stack>
       </Flex>
-
-      {/* Load scripts for google authentication */}
-      <Script async defer beforeInteractive src="https://apis.google.com/js/api.js" onLoad={gapiLoaded()} />
-      <Script async defer beforeInteractive src="https://accounts.google.com/gsi/client" onLoad={gisLoaded()} />
-
     </ChakraProvider>
-
   );
 }
 export default App
