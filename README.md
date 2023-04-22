@@ -10,7 +10,7 @@ Step 2: Move into directory
 ```bash
 cd plagiarism
 ```
-Step 3: Create required Google Drive Credentials
+Step 3: Create required Google Drive Credentials  
     1. [Enable Google drive api in a Google Cloud Project](https://console.cloud.google.com/flows/enableapi?apiid=drive.googleapis.com)  
     2. [Create Authorisation credentials](https://console.cloud.google.com/apis/credentials)  
         - For **Authorized JavaScript origins** - use `http://localhost:3000`.  
@@ -62,4 +62,5 @@ https://developers.google.com/oauthplayground/
 - [x] Export the files
 https://developers.google.com/drive/api/v3/reference/files/export
 
-
+- [x] Send files to backend and listen for the upload request on backend
+- [x] Execute comparison on receiving `/compare` request and send back results  
