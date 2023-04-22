@@ -18,7 +18,9 @@ Step 3: Create required Google Drive Credentials
         - For **Authorized redirect uri** - use `http://localhost:3000/`  
     3. [Create an API key](https://console.cloud.google.com/apis/credentials)  
 
-    You can follow more detailed instructions from [Set up your environment](https://developers.google.com/drive/api/quickstart/js#set_up_your_environment) section.
+You can follow more detailed instructions from [Set up your environment](https://developers.google.com/drive/api/quickstart/js#set_up_your_environment) section.
+
+Rename `.env.local.example` to `.env.local` and put your credentials inside the file.
 
 Step 4: Start frontend from the top of folder
 |npm | yarn | pnpm |
