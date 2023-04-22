@@ -1,5 +1,6 @@
 # Plagiarism-detector
 A web app to detect plagiarism percentage in multiple uploaded PDF files.
+> ⚠️ This web app tries to keep the process as fast as possible and hence the trade off in OCR comes with quality. It's efficiency is maximum for PDFs consisting machine readable fonts(computer typed text). However, it's just workable for handwritten PDFs. OCR efficiency also depends upon the scan quality of PDFs. So make sure to have good lighting and resolution when creating PDFs.
 
 ### Setup locally
 Step 1: Clone the repository
