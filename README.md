@@ -22,6 +22,9 @@ Step 4:
 
 
 ### Resources and references
+https://developers.google.com/identity/gsi/web/guides/handle-credential-responses-js-functions
+https://developers.google.com/identity/gsi/web/guides/display-button#html
+
 https://developers.google.com/drive/api/v3/reference/files/create
 https://developers.google.com/drive/api/v3/reference/files/export
 
