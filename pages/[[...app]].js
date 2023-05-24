@@ -511,7 +511,9 @@ const App = () => {
     }
     else {
       console.log(comparisonResult)
-      return comparisonResult;
+      return new Promise((resolve, reject) => {
+        resolve(comparisonResult)
+      })
     }
   }
 
